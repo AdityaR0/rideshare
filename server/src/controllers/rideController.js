@@ -1,10 +1,11 @@
 const { validationResult } = require("express-validator");
 const Ride = require("../models/Ride");
+const Booking = require("../models/Booking");
 
-/**
- * ================= CREATE RIDE (DRIVER)
- * POST /api/rides
- */
+/* =====================================================
+   CREATE RIDE (DRIVER)
+   POST /api/rides
+===================================================== */
 exports.createRide = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -47,10 +48,11 @@ exports.createRide = async (req, res) => {
   }
 };
 
-/**
- * ================= GET AVAILABLE RIDES (PASSENGER)
- * GET /api/rides
- */
+
+/* =====================================================
+   GET AVAILABLE RIDES (PASSENGER)
+   GET /api/rides
+===================================================== */
 exports.getAvailableRides = async (req, res) => {
   try {
     const rides = await Ride.find({
@@ -70,10 +72,11 @@ exports.getAvailableRides = async (req, res) => {
   }
 };
 
-/**
- * ================= GET DRIVER RIDES (IMPORTANT)
- * GET /api/rides/my
- */
+
+/* =====================================================
+   DRIVER DASHBOARD – MY RIDES
+   GET /api/rides/driver/my
+===================================================== */
 exports.getDriverRides = async (req, res) => {
   try {
     const rides = await Ride.find({ driver: req.user.id })
@@ -89,10 +92,46 @@ exports.getDriverRides = async (req, res) => {
   }
 };
 
-/**
- * ================= SEND SOS
- * POST /api/rides/:rideId/sos
- */
+
+/* =====================================================
+   DRIVER RIDE DETAILS (🔥 MOST IMPORTANT)
+   GET /api/rides/driver/:id/details
+===================================================== */
+exports.getDriverRideDetails = async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.id)
+      .populate("driver", "name phone")
+      .populate("passengers", "name phone");
+
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+
+    // security
+    if (ride.driver._id.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const bookings = await Booking.find({ ride: ride._id })
+      .populate("passenger", "name phone")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      ride,
+      bookings,
+    });
+  } catch (err) {
+    console.error("Ride details error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching ride details",
+    });
+  }
+};
+
+
+/* =====================================================
+   SEND SOS
+   POST /api/rides/:rideId/sos
+===================================================== */
 exports.sendSOS = async (req, res) => {
   try {
     const ride = await Ride.findById(req.params.rideId);
@@ -106,6 +145,7 @@ exports.sendSOS = async (req, res) => {
     ride.sosEvents.push({
       user: req.user.id,
       message: "SOS triggered during ride",
+      createdAt: new Date(),
     });
 
     await ride.save();
@@ -123,10 +163,11 @@ exports.sendSOS = async (req, res) => {
   }
 };
 
-/**
- * ================= ADD REVIEW
- * POST /api/rides/:rideId/review
- */
+
+/* =====================================================
+   ADD REVIEW
+   POST /api/rides/:rideId/review
+===================================================== */
 exports.addReview = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -151,6 +192,7 @@ exports.addReview = async (req, res) => {
       passenger: req.user.id,
       rating,
       comment: comment || "",
+      createdAt: new Date(),
     });
 
     await ride.save();

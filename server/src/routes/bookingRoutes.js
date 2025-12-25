@@ -1,13 +1,20 @@
 const express = require("express");
+const { protect } = require("../middleware/authMiddleware");
+
 const {
   createBooking,
-  getMyBookings,
+  getPassengerBookings,
+  getDriverRides,
+  getBookingById,
+  completeRide
 } = require("../controllers/bookingController");
-const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/", authMiddleware, createBooking);
-router.get("/me", authMiddleware, getMyBookings);
+router.post("/", protect, createBooking);
+router.get("/passenger/my", protect, getPassengerBookings);
+router.get("/driver/my", protect, getDriverRides);
+router.get("/:id", protect, getBookingById);     // ✅ FIXED
+router.put("/:id/complete", protect, completeRide);
 
 module.exports = router;

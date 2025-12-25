@@ -1,31 +1,39 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../../utils/axios";
 
 export default function RideDetails() {
-  const { id } = useParams();
-  const [ride, setRide] = useState(null);
+  const { id } = useParams(); // booking id
+  const navigate = useNavigate();
+  const [booking, setBooking] = useState(null);
 
   useEffect(() => {
-    api.get("/rides").then(res => {
-      const found = res.data.find(r => r._id === id);
-      setRide(found);
-    });
+    api.get(`/bookings/${id}`).then(res => setBooking(res.data));
   }, [id]);
 
-  if (!ride) return <p>Loading...</p>;
+  if (!booking) return <p className="p-6">Loading...</p>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">Ride Details</h2>
+    <div className="max-w-4xl mx-auto p-6 space-y-4">
+      <h2 className="text-2xl font-bold">Ride Details</h2>
 
-      <p><b>Route:</b> {ride.origin} → {ride.destination}</p>
-      <p><b>Date:</b> {new Date(ride.date).toLocaleString()}</p>
-      <p><b>Driver:</b> {ride.driver?.name}</p>
-      <p><b>Phone:</b> {ride.driver?.phone}</p>
-      <p><b>Price:</b> ₹{ride.pricePerSeat}</p>
-      <p><b>Payment:</b> UPI / Cash (Demo)</p>
-      <p><b>Status:</b> Confirmed</p>
+      <p><b>Route:</b> {booking.ride.origin} → {booking.ride.destination}</p>
+      <p><b>Date:</b> {new Date(booking.ride.date).toLocaleString()}</p>
+      <p><b>Driver:</b> {booking.ride.driver.name}</p>
+      <p><b>Status:</b> {booking.status}</p>
+
+      {booking.status === "confirmed" && (
+        <button
+          onClick={async () => {
+            await api.put(`/bookings/${booking._id}/cancel`);
+            alert("Ride cancelled");
+            navigate("/passenger/my-rides");
+          }}
+          className="px-4 py-2 bg-rose-600 text-white rounded"
+        >
+          Cancel Ride
+        </button>
+      )}
     </div>
   );
 }

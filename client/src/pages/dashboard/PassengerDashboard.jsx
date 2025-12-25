@@ -59,12 +59,18 @@ export default function PassengerDashboard() {
 
   <div className="flex gap-3 mt-3">
     {/* Search rides */}
-    <button
-      onClick={() => navigate("/passenger/book-rides")}
+    {/* <button
+      onClick={() => navigate("/passenger/my-rides")}
       className="px-4 py-2 rounded-full text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700"
     >
       Search rides
-    </button>
+    </button> */}
+    <Link
+      to="/passenger/create-ride"
+      className="px-4 py-2 rounded-full text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 inline-block"
+    >
+      Search rides
+    </Link>
 
     {/* View ride details */}
     <Link

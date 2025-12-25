@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import L from "leaflet";
+import "leaflet-routing-machine";
 import api from "../utils/axios";
 import "leaflet/dist/leaflet.css";
 
@@ -474,6 +475,7 @@ function LoggedInHome({ user }) {
 
   // rides shown in the list (initially none)
   const [results, setResults] = useState([]);
+  const [searched, setSearched] = useState(false);
 
   // driver "offer ride" form state
   // const [driverRide, setDriverRide] = useState({
@@ -508,20 +510,35 @@ function LoggedInHome({ user }) {
   try {
     const res = await api.get("/rides");
 
-    // optional frontend filter
-    // const filtered = res.data.filter(
-    //   (ride) =>
-    //     (!search.from || ride.origin === search.from) &&
-    //     (!search.to || ride.destination === search.to)
-    // );
-    const filtered = res.data.filter(
-  (ride) =>
-    ride.origin === search.from &&
-    ride.destination === search.to
-);
+    const filtered = res.data.filter((ride) => {
+      const rideDate = new Date(ride.date);
 
+      // convert to YYYY-MM-DD
+      const rideDay = rideDate.toISOString().slice(0, 10);
+
+      const fromMatch = ride.origin === search.from;
+      const toMatch = ride.destination === search.to;
+
+      // date match
+      const dateMatch = search.date
+        ? rideDay === search.date
+        : true;
+
+      // time match with ±1 hour tolerance
+      let timeMatch = true;
+      if (search.time) {
+        const searchDateTime = new Date(`${search.date}T${search.time}`);
+        const diffMinutes = Math.abs(
+          (rideDate - searchDateTime) / (1000 * 60)
+        );
+        timeMatch = diffMinutes <= 60;
+      }
+
+      return fromMatch && toMatch && dateMatch && timeMatch;
+    });
 
     setResults(filtered);
+    setSearched(true);
   } catch (error) {
     console.error(error);
     alert("❌ Failed to fetch rides");
@@ -613,6 +630,8 @@ function LoggedInHome({ user }) {
   const mapContainerRef = useRef(null); // div element
   const mapRef = useRef(null); // Leaflet map instance
   const layersRef = useRef([]); // markers + polylines
+  const routingRef = useRef(null);
+
 
   // Create map once
   useEffect(() => {
@@ -634,49 +653,57 @@ function LoggedInHome({ user }) {
 
   // Update markers / routes whenever results change
   useEffect(() => {
-    if (role !== "passenger") return;
+  if (role !== "passenger") return;
 
-    const map = mapRef.current;
-    if (!map) return;
+  const map = mapRef.current;
+  if (!map) return;
 
-    // Remove old layers
-    layersRef.current.forEach((layer) => {
-      map.removeLayer(layer);
-    });
-    layersRef.current = [];
-
-    if (results.length === 0) {
-      return;
+  async function drawRoute() {
+    // remove previous route
+    if (routingRef.current) {
+      map.removeControl(routingRef.current);
+      routingRef.current = null;
     }
 
-    const bounds = L.latLngBounds([]);
+    if (results.length === 0) return;
 
-    results.forEach((ride) => {
-      const fromCoord = cityCoords[ride.origin];
-      const toCoord = cityCoords[ride.destination];
-      if (!fromCoord || !toCoord) return;
+    // Show route of first result
+    const ride = results[0];
 
-      const fromMarker = L.marker(fromCoord).addTo(map);
-      const toMarker = L.marker(toCoord).addTo(map);
-      fromMarker.bindPopup(`${ride.origin}`);
-      toMarker.bindPopup(`${ride.destination}`);
+    // Convert location → lat long
+    const getCoords = async (place) => {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${place}`
+      );
+      const data = await res.json();
+      if (!data[0]) return null;
+      return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    };
 
-      const routeLine = L.polyline([fromCoord, toCoord], {
-        color: "dodgerblue",
-        weight: 4,
-        opacity: 0.8,
-      }).addTo(map);
+    const from = await getCoords(ride.origin);
+    const to = await getCoords(ride.destination);
+    if (!from || !to) return;
 
-      layersRef.current.push(fromMarker, toMarker, routeLine);
+    routingRef.current = L.Routing.control({
+      waypoints: [
+        L.latLng(from[0], from[1]),
+        L.latLng(to[0], to[1]),
+      ],
+      routeWhileDragging: false,
+      draggableWaypoints: false,
+      addWaypoints: false,
+      show: false,
+    }).addTo(map);
 
-      bounds.extend(fromCoord);
-      bounds.extend(toCoord);
-    });
+    map.fitBounds([
+      L.latLng(from[0], from[1]),
+      L.latLng(to[0], to[1]),
+    ]);
+  }
 
-    if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [20, 20] });
-    }
-  }, [results, role]);
+  drawRoute();
+}, [results, role]);
+
 
   return (
     <div className="bg-slate-50 min-h-screen flex flex-col">
@@ -1087,9 +1114,13 @@ function LoggedInHome({ user }) {
 
                 {/* Demo rides list */}
                 <div className="space-y-3">
-  {results.length === 0 ? (
+  {!searched ? (
     <div className="border border-dashed border-slate-300 rounded-2xl p-4 text-sm text-slate-500 bg-white">
-      No rides to show yet. Use the search above to see rides.
+      Use the search above to find rides.
+    </div>
+  ) : results.length === 0 ? (
+    <div className="border border-rose-300 rounded-2xl p-4 text-sm text-rose-600 bg-rose-50">
+      ❌ No rides available for this route & time.
     </div>
   ) : (
     results.map((ride) => (
