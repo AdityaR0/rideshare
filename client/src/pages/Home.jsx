@@ -933,7 +933,7 @@ const fuelType = selectedVehicle.fuelType;
 
     // Send request with Authorization header
     const res = await fetch(
-      "http://localhost:5000/api/sos/trigger",
+`${import.meta.env.VITE_API_BASE_URL}/sos/trigger`,
       {
         method: "POST",
         headers: {
