@@ -20,7 +20,7 @@ export default function Register() {
     e.preventDefault();
     setLoading(true);
     try {
-      `${import.meta.env.VITE_API_BASE_URL}/auth/register`, {
+       `${import.meta.env.VITE_API_BASE_URL}/auth/register`, {
         ...form,
         role,
       });
