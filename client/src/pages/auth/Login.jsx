@@ -123,7 +123,7 @@ export default function Login() {
           >
             Driver
           </button>
-          <button
+          {/* <button
             type="button"
             className={tabClass("admin")}
             onClick={() => {
@@ -133,7 +133,7 @@ export default function Login() {
             }}
           >
             Admin
-          </button>
+          </button> */}
         </div>
 
         {/* Error */}

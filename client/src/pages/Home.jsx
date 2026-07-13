@@ -6,7 +6,7 @@ import L from "leaflet";
 import "leaflet-routing-machine";
 import api from "../utils/axios";
 import "leaflet/dist/leaflet.css";
-
+import BookingPopup from "../components/BookingPopup";
 
 
 // ---------- DATA SHARED BETWEEN VIEWS ----------
@@ -476,6 +476,9 @@ function LoggedInHome({ user }) {
   // rides shown in the list (initially none)
   const [results, setResults] = useState([]);
   const [searched, setSearched] = useState(false);
+  const [femaleOnly, setFemaleOnly] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedRide, setSelectedRide] = useState(null);
 
   // driver "offer ride" form state
   // const [driverRide, setDriverRide] = useState({
@@ -485,18 +488,58 @@ function LoggedInHome({ user }) {
   //   seats: "1",
   //   carModel: "Sedan",
   // });
+  // const [driverRide, setDriverRide] = useState({
+  // origin: "",
+  // destination: "",
+  // date: "",
+  // seatsAvailable: 1,
+  // });
   const [driverRide, setDriverRide] = useState({
   origin: "",
   destination: "",
   date: "",
   seatsAvailable: 1,
-  });
+  vehicleId: "", // ✅ ADD THIS
+});
 
 
   // SEARCH HANDLERS (passenger)
   const handleSearchChange = (field) => (e) => {
     setSearch((prev) => ({ ...prev, [field]: e.target.value }));
   };
+
+  
+  async function getCoords(place) {
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&q=${place}`
+  );
+  const data = await res.json();
+
+  if (!data[0]) return null;
+
+  return {
+    lat: parseFloat(data[0].lat),
+    lon: parseFloat(data[0].lon),
+  };
+}
+
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
 
   // const handleSearch = () => {
   //   const filtered = demoRides.filter(
@@ -508,7 +551,13 @@ function LoggedInHome({ user }) {
   // };
   const handleSearch = async () => {
   try {
-    const res = await api.get("/rides");
+    // const res = await api.get("/rides");
+
+    const res = await api.get("/rides", {
+  params: {
+    femaleOnly,
+  },
+});
 
     const filtered = res.data.filter((ride) => {
       const rideDate = new Date(ride.date);
@@ -570,6 +619,15 @@ function LoggedInHome({ user }) {
       return;
     }
 
+
+    if (!driverRide.vehicleId) {
+  alert("Please select a vehicle");
+  return;
+}
+
+const selectedVehicle = user.vehicles[driverRide.vehicleId];
+const fuelType = selectedVehicle.fuelType;
+
     // Simple auto-price logic (teacher-friendly)
     const BASE_FARE = 50;
     const pricePerSeat =
@@ -581,6 +639,10 @@ function LoggedInHome({ user }) {
       date: driverRide.date,
       seatsAvailable: driverRide.seatsAvailable,
       pricePerSeat,
+  vehicleType: selectedVehicle.vehicleType,
+  vehicleName: selectedVehicle.vehicleName,
+  vehicleNumber: selectedVehicle.vehicleNumber,
+  fuelType: selectedVehicle.fuelType,
     });
 
     alert("✅ Ride created successfully");
@@ -598,33 +660,109 @@ function LoggedInHome({ user }) {
 };
 
   // BOOK SEAT HANDLER (passenger)
-  const handleBookSeat = (ride) => {
-    if (role !== "passenger") {
-      alert("Only Passenger accounts can book rides in this demo.");
-      return;
+  // const handleBookSeat = (ride) => {
+  //   if (role !== "passenger") {
+  //     alert("Only Passenger accounts can book rides in this demo.");
+  //     return;
+  //   }
+
+  //   const seatsStr = window.prompt(
+  //     "Enter number of seats you want to book:",
+  //     "1"
+  //   );
+
+  //   if (seatsStr === null) return;
+
+  //   const seats = parseInt(seatsStr, 10);
+  //   if (Number.isNaN(seats) || seats <= 0) {
+  //     alert("Please enter a valid number of seats.");
+  //     return;
+  //   }
+
+  //   navigate("/payment", {
+  //     state: {
+  //       rideId: ride._id,
+  //       seats,
+  //       ride,
+  //     },
+  //   });
+  // };
+//   
+
+// const handleBookSeat = (ride) => {
+  const handleBookSeat = async (ride) => {
+  if (role !== "passenger") {
+    alert("Only Passenger accounts can book rides.");
+    return;
+  }
+
+  // Step 1: ask booking type
+  const bookingType = window.prompt(
+    "Who are you booking for?\n\n1 = Myself\n2 = Someone Else",
+    "1"
+  );
+
+  if (!bookingType) return;
+
+  // Step 2: ask seats
+  // const seatsStr = window.prompt(
+  //   "Enter number of seats you want to book:",
+  //   "1"
+  // );
+  const seatsStr = window.prompt(
+  `Enter number of seats you want to book (Max ${ride.seatsAvailable})`,
+  "1"
+);
+
+  if (!seatsStr) return;
+
+  const seats = parseInt(seatsStr);
+
+  if (isNaN(seats) || seats <= 0) {
+    alert("Invalid seat number");
+    return;
+  }
+  if (seats > ride.seatsAvailable) {
+  alert(`❌ Only ${ride.seatsAvailable} seats available`);
+  return;
+}
+
+  const passengers = [];
+
+  for (let i = 0; i < seats; i++) {
+
+    let name = "";
+    let phone = "";
+
+    // If booking for myself first passenger auto-fill
+    if (i === 0 && bookingType === "1") {
+      name = user.name;
+      phone = user.phone || "";
+    } else {
+      name = window.prompt(`Enter name of passenger ${i + 1}`);
+      if (!name) {
+        alert("Passenger name required");
+        return;
+      }
+
+      phone = window.prompt(`Enter phone of passenger ${i + 1}`);
     }
 
-    const seatsStr = window.prompt(
-      "Enter number of seats you want to book:",
-      "1"
-    );
-
-    if (seatsStr === null) return;
-
-    const seats = parseInt(seatsStr, 10);
-    if (Number.isNaN(seats) || seats <= 0) {
-      alert("Please enter a valid number of seats.");
-      return;
-    }
-
-    navigate("/payment", {
-      state: {
-        rideId: ride._id,
-        seats,
-        ride,
-      },
+    passengers.push({
+      name,
+      phone
     });
-  };
+  }
+
+  navigate("/payment", {
+    state: {
+      rideId: ride._id,
+      seats,
+      passengers,
+      ride
+    },
+  });
+};
 
   // LEAFLET MAP SETUP (for passenger search)
   const mapContainerRef = useRef(null); // div element
@@ -741,7 +879,14 @@ function LoggedInHome({ user }) {
                 Go to Dashboard
               </button>
               <button
-                onClick={() => navigate("/review")}
+                // onClick={() => navigate("/review")} 
+                onClick={() =>
+    navigate(
+      role === "passenger"
+        ? "/passenger/my-rides"
+        : "/driver/my-rides"
+    )
+  }
                 className="px-6 py-2.5 rounded-full border border-white/60 text-sm font-semibold hover:bg-white/10"
               >
                 View My Rides
@@ -764,38 +909,50 @@ function LoggedInHome({ user }) {
                 {role === "passenger" && (
                   <>
                     <button
-                      onClick={() => navigate("/passenger/dashboard")}
+                      // onClick={() => navigate("/passenger/dashboard")}
+                      onClick={() => window.scrollTo({
+  top: 500,
+  behavior: "smooth"
+})}
                       className="bg-white text-slate-900 rounded-xl px-4 py-3 text-left shadow-sm hover:bg-slate-100"
                     >
                       🔍 Search rides & book seats
                     </button>
                     <button
-                      onClick={() => navigate("/review")}
+                      // onClick={() => navigate("/review")}
+                      onClick={() => navigate("/passenger/rent-vehicles")}
                       className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-left hover:bg-white/5"
                     >
-                      ⭐ Rate your ride
+                      🚗 Rent Vehicles
                     </button>
                     <button
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(
-                            "http://localhost:5000/api/sos/trigger",
-                            {
-                              method: "POST",
-                            }
-                          );
-                          const data = await res.json();
-                          if (data.success) {
-                            alert("✅ SOS alert sent successfully.");
-                          } else {
-                            alert(
-                              "❌ Failed to send SOS alert: " + data.error
-                            );
-                          }
-                        } catch (err) {
-                          alert("❌ Error sending SOS alert: " + err.message);
-                        }
-                      }}
+                   onClick={async () => {
+  try {
+    // Get JWT token stored after login
+    const token = localStorage.getItem("carpool-token");
+
+    // Send request with Authorization header
+    const res = await fetch(
+      "http://localhost:5000/api/sos/trigger",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("✅ SOS alert sent successfully.");
+    } else {
+      alert("❌ " + data.message);
+    }
+  } catch (err) {
+    alert("❌ Error sending SOS alert: " + err.message);
+  }
+}}
                       className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-left hover:bg-white/5"
                     >
                       🚨 Check SOS & alerts
@@ -805,19 +962,31 @@ function LoggedInHome({ user }) {
                 {role === "driver" && (
                   <>
                     <button
-                      onClick={() => navigate("/driver/dashboard")}
+                      // onClick={() => navigate("/driver/dashboard")}
+                      onClick={() =>
+  document
+    .getElementById("create-ride-section")
+    ?.scrollIntoView({ behavior: "smooth" })
+}
                       className="bg-white text-slate-900 rounded-xl px-4 py-3 text-left shadow-sm hover:bg-slate-100"
                     >
                       ➕ Create / offer a ride
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => navigate("/driver/dashboard")}
                       className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-left hover:bg-white/5"
                     >
                       🚙 Manage vehicle & profile
-                    </button>
+                    </button> */}
                     <button
-                      onClick={() => navigate("/driver/dashboard")}
+  onClick={() => navigate("/driver/rent-vehicle")}
+  className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-left hover:bg-white/5"
+>
+  🚗 Rent Vehicle
+</button>
+                    <button
+                      // onClick={() => navigate("/driver/dashboard")}
+                      onClick={() => navigate("/driver/my-rides")}
                       className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-left hover:bg-white/5"
                     >
                       ⭐ View your ratings
@@ -835,7 +1004,11 @@ function LoggedInHome({ user }) {
         <div className="max-w-6xl mx-auto px-4 py-10 space-y-6">
           {role === "driver" ? (
             /* ---------- DRIVER: OFFER NEW RIDE FORM ---------- */
-            <div className="max-w-3xl mx-auto">
+            // <div className="max-w-3xl mx-auto">
+            <div
+  id="create-ride-section"
+  className="max-w-3xl mx-auto"
+>
               <h2 className="text-2xl font-semibold text-slate-900 text-center mb-1">
                 Create a Carpool Listing
               </h2>
@@ -985,7 +1158,7 @@ function LoggedInHome({ user }) {
   </div>
 
   {/* CAR MODEL (UI ONLY, OPTIONAL) */}
-  <div>
+  {/* <div>
     <label className="block text-xs font-medium text-slate-500 mb-1">
       Car Model
     </label>
@@ -998,7 +1171,29 @@ function LoggedInHome({ user }) {
       <option>SUV</option>
       <option>Other</option>
     </select>
-  </div>
+  </div> */}
+  {/* VEHICLE SELECT */}
+<div>
+  <label className="block text-xs font-medium text-slate-500 mb-1">
+    Select Vehicle
+  </label>
+
+  <select
+    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+    value={driverRide.vehicleId}
+    onChange={(e) =>
+      setDriverRide({ ...driverRide, vehicleId: e.target.value })
+    }
+  >
+    <option value="">Select your vehicle</option>
+
+    {user?.vehicles?.map((v, i) => (
+      <option key={i} value={i}>
+        {v.vehicleType.toUpperCase()} - {v.vehicleName}
+      </option>
+    ))}
+  </select>
+</div>
 </div>
 
                 <button
@@ -1096,7 +1291,40 @@ function LoggedInHome({ user }) {
       />
     </div>
   </div>
+{/* ====-------====== */}
 
+{/* {user?.role === "passenger" && user?.gender === "female" && (
+  <label style={{ fontSize: "14px" }}>
+    <input
+      type="checkbox"
+      checked={femaleOnly}
+      onChange={(e) => setFemaleOnly(e.target.checked)}
+    />
+    {" "}Female drivers only
+  </label>
+)} */}
+
+{user?.role === "passenger" && user?.gender === "female" && (
+  <button
+    type="button"
+    onClick={() => setFemaleOnly(!femaleOnly)}
+    className={`px-3 py-1 rounded-full border text-xs font-medium transition
+      ${
+        femaleOnly
+          ? "bg-pink-50 text-pink-700 border-pink-300"
+          : "bg-white text-slate-500 border-slate-300 hover:bg-slate-100"
+      }`}
+  >
+    Female only
+    <span
+      className={`ml-2 inline-block h-2 w-2 rounded-full align-middle ${
+        femaleOnly ? "bg-pink-600" : "bg-slate-300"
+      }`}
+    />
+  </button>
+)}
+
+{/* ===---------====== */}
   <button
     className="w-full lg:w-auto px-6 py-2.5 rounded-full bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
     onClick={handleSearch}
@@ -1146,6 +1374,13 @@ function LoggedInHome({ user }) {
               {ride.driver?.name || "Driver"}
             </span>
           </p>
+          <p className="text-slate-500">
+  Vehicle:{" "}
+  <span className="font-medium">
+    {/* {ride.vehicleType} - {ride.vehicleName} */}
+    {ride.vehicleType} - {ride.vehicleName} ({ride.fuelType})
+  </span>
+</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -1153,12 +1388,21 @@ function LoggedInHome({ user }) {
             ₹{ride.pricePerSeat}
           </p>
 
-          <button
+          {/* <button
             onClick={() => handleBookSeat(ride)}
             className="px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
           >
             Book Seat
-          </button>
+          </button> */}
+          <button
+  onClick={() => {
+    setSelectedRide(ride);
+    setShowPopup(true);
+  }}
+  className="px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-semibold hover:bg-indigo-600 transition"
+>
+  Book Seat
+</button>
         </div>
       </div>
     ))
@@ -1170,6 +1414,32 @@ function LoggedInHome({ user }) {
           )}
         </div>
       </section>
+      
+
+<BookingPopup
+  isOpen={showPopup}
+  user={user}
+  maxSeats={selectedRide?.seatsAvailable}
+  onClose={() => setShowPopup(false)}
+  onConfirm={(passengers, seats) => {
+
+    setShowPopup(false);
+
+    navigate("/payment", {
+      state: {
+        rideId: selectedRide._id,
+        seats,
+        passengers,
+        ride: selectedRide
+      }
+    });
+
+  }}
+/>
+
+
+
+
     </div>
   );
 }

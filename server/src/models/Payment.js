@@ -11,16 +11,27 @@ const paymentSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    // method: {
+    //   type: String,
+    //   enum: ["UPI", "QR", "CASH"],
+    //   required: true,
+    // },
+    // status: {
+    //   type: String,
+    //   enum: ["CONFIRMED"],
+    //   default: "CONFIRMED",
+    // },
     method: {
-      type: String,
-      enum: ["UPI", "QR", "CASH"],
-      required: true,
-    },
-    status: {
-      type: String,
-      enum: ["CONFIRMED"],
-      default: "CONFIRMED",
-    },
+  type: String,
+  enum: ["UPI", "QR", "CASH", "CARD"],
+  required: true,
+},
+
+status: {
+  type: String,
+  enum: ["PENDING", "CONFIRMED", "FAILED", "PAID"],
+  default: "PAID",
+},
   },
   { timestamps: true }
 );

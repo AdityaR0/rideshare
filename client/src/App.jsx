@@ -1,9 +1,8 @@
-// client/src/App.jsx
-
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import AdminLogin from "./pages/auth/AdminLogin";
 
 import PassengerDashboard from "./pages/dashboard/PassengerDashboard";
 import DriverDashboard from "./pages/dashboard/DriverDashboard";
@@ -28,6 +27,22 @@ import ReviewPage from "./components/ReviewPage";
 
 import CommunityList from "./pages/CommunityList";
 import Community from "./pages/Community";
+import Notifications from "./pages/Notifications";
+
+import RideCoins from "./pages/RideCoins";
+import RentVehicle from "./pages/rental/RentVehicle";
+
+import TMSLCommunity from "./pages/TMSLCommunity";
+import InfosysCommunity from "./pages/InfosysCommunity";
+import ActiveRideWidget from "./components/ActiveRideWidget";
+import RentalBookings from "./pages/driver/RentalBookings";
+import MyRentals from "./pages/passenger/MyRentals";
+import RentVehicles from "./pages/passenger/RentVehicles";
+import RentalVehicleDetails from "./pages/passenger/RentalVehicleDetails";
+import RentalPayment from "./pages/RentalPayment";
+import RentalBookingDetails from "./pages/passenger/RentalBookingDetails";
+import DriverRentalBookingDetails from "./pages/driver/RentalBookingDetails";
+
 
 function App() {
   return (
@@ -38,6 +53,19 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/payment" element={<Payment />} />
+        <Route path="/notifications" element={<Notifications />} />
+
+        <Route
+  path="/ridecoins"
+  element={
+    <ProtectedRoute>
+      <RideCoins />
+    </ProtectedRoute>
+  }
+/>
+
+        {/* ================= HIDDEN ADMIN LOGIN ================= */}
+        <Route path="/secure-admin-login" element={<AdminLogin />} />
 
         {/* ================= COMPLETE PROFILE ================= */}
         <Route
@@ -85,6 +113,51 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+  path="/passenger/my-rentals"
+  element={
+    <ProtectedRoute allowedRoles={["passenger"]}>
+      <MyRentals />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/passenger/rent-vehicles"
+  element={
+    <ProtectedRoute allowedRoles={["passenger"]}>
+      <RentVehicles />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/passenger/rental/:id"
+  element={
+    <ProtectedRoute allowedRoles={["passenger"]}>
+      <RentalVehicleDetails />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/rental-payment"
+  element={
+    <ProtectedRoute allowedRoles={["passenger"]}>
+      <RentalPayment />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/passenger/my-rentals/:bookingId"
+  element={<RentalBookingDetails />}
+/>
+<Route
+  path="/driver/rental-bookings/:bookingId"
+  element={
+    <ProtectedRoute allowedRoles={["driver"]}>
+      <DriverRentalBookingDetails />
+    </ProtectedRoute>
+  }
+/>
 
         {/* ================= DRIVER ================= */}
         <Route
@@ -115,6 +188,26 @@ function App() {
         />
 
         <Route
+  path="/driver/rent-vehicle"
+  element={
+    <ProtectedRoute allowedRoles={["driver"]}>
+      <RentVehicle />
+    </ProtectedRoute>
+  }
+/>
+
+{/* <Route
+  path="/driver/rental-bookings"
+  element={
+    <ProtectedRoute allowedRoles={["driver"]}>
+      <h1 className="text-3xl text-center py-20">
+        Rental Bookings Page
+      </h1>
+    </ProtectedRoute>
+  }
+/> */}
+
+        <Route
           path="/driver/my-rides"
           element={
             <ProtectedRoute allowedRoles={["driver"]}>
@@ -132,7 +225,7 @@ function App() {
           }
         />
 
-        {/* ================= ADMIN ================= */}
+        {/* ================= ADMIN DASHBOARD ================= */}
         <Route
           path="/admin/dashboard"
           element={
@@ -171,11 +264,41 @@ function App() {
           }
         />
 
+
+<Route
+  path="/driver/rental-bookings"
+  element={
+    <ProtectedRoute allowedRoles={["driver"]}>
+      <RentalBookings />
+    </ProtectedRoute>
+  }
+/>
+
+
+        <Route
+  path="/community/tmsl"
+  element={
+    <ProtectedRoute>
+      <TMSLCommunity />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/community/infosys"
+  element={
+    <ProtectedRoute>
+      <InfosysCommunity />
+    </ProtectedRoute>
+  }
+/>
+
         {/* ================= FALLBACK ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       <Ai />
+      <ActiveRideWidget />
     </Layout>
   );
 }

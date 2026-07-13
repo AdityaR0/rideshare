@@ -23,12 +23,29 @@ const rideSchema = new mongoose.Schema(
     origin: { type: String, required: true, trim: true },
     destination: { type: String, required: true, trim: true },
     date: { type: Date, required: true },
-    seatsAvailable: { type: Number, required: true, min: 1 },
+    seatsAvailable: { type: Number, required: true, min: 0 },
     pricePerSeat: { type: Number, required: true, min: 0 },
+    vehicleType: {
+  type: String,
+},
+
+vehicleName: {
+  type: String,
+},
+vehicleNumber: {
+  type: String,
+},
+fuelType: {
+  type: String,
+},
+    // status: {
+    //   type: String,
+    //   enum: ['OPEN', 'BOOKED', 'COMPLETED', 'CANCELLED'],
+    //   default: 'OPEN',
     status: {
-      type: String,
-      enum: ['OPEN', 'BOOKED', 'COMPLETED', 'CANCELLED'],
-      default: 'OPEN',
+  type: String,
+  enum: ['OPEN', 'ONGOING', 'COMPLETED', 'CANCELLED'],
+  default: 'OPEN',
     },
     passengers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     reviews: [reviewSchema],

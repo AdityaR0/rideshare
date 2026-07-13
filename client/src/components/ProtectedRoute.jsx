@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user } = useAuth();
+  console.log("ProtectedRoute User =", user);
 
   // not logged in
   if (!user) {

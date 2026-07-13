@@ -12,6 +12,12 @@ const driverRoutes = require("./routes/driverRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const rideRoutes = require("./routes/rideRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const coinRoutes = require("./routes/coinRoutes");
+const rentalVehicleRoutes = require("./routes/rentalVehicleRoutes");
+const rentalBookingRoutes = require("./routes/rentalBookingRoutes");
+const rentalPaymentRoutes = require("./routes/rentalPaymentRoutes");
+
 
 const app = express();
 
@@ -46,13 +52,25 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/driver", driverRoutes);
 app.use("/api/sos", sosRoutes);
 app.use("/api/community", require("./routes/communityRoutes"));
+app.use("/api/notifications", notificationRoutes);
 
 // Payments (Stripe + Cash)
 app.use("/api/payments", paymentRoutes);
+app.use("/api/rental-payments", rentalPaymentRoutes);
 
 // 🚗 MAIN CARPOOL FLOW
 app.use("/api/rides", rideRoutes);
 app.use("/api/bookings", bookingRoutes);
+
+// 🚙 VEHICLE RENTAL
+// app.use("/api/rental-vehicles", rentalVehicleRoutes);
+
+// app.use("/api/ridecoins", coinRoutes);
+// 🚙 VEHICLE RENTAL
+app.use("/api/rental-vehicles", rentalVehicleRoutes);
+app.use("/api/rental-bookings", rentalBookingRoutes);
+
+app.use("/api/ridecoins", coinRoutes);
 
 /* ================= HEALTH CHECK ================= */
 app.get("/", (req, res) => {

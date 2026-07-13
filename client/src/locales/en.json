@@ -1,5 +1,15 @@
 {
   "selectLanguage": "Select your preferred language",
   "completeProfile": "Complete Your Profile",
-  "saveContinue": "Save & Continue"
+  "saveContinue": "Save & Continue",
+
+  "heroTag": "CARPOOL RIDE SHARING",
+
+  "heroTitle": "Save Money, Save Fuel, Share Your Commute.",
+
+  "heroDescription": "Connect passengers and drivers securely with seat booking, SOS alerts and ride reviews. Built as a full-stack project using React, Node.js and MongoDB.",
+
+  "goDashboard": "Go to Dashboard",
+
+  "viewMyRides": "View My Rides"
 }

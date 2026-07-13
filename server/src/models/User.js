@@ -31,6 +31,33 @@ const userSchema = new mongoose.Schema(
       default: "passenger",
     },
 
+    community: {
+  type: String,
+  default: "", // "local", "college", "company"
+},
+
+officialCommunities: [
+  {
+    communityName: {
+      type: String,
+    },
+
+    verifiedEmail: {
+      type: String,
+    },
+
+    verified: {
+      type: Boolean,
+      default: false,
+    },
+
+    joinedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+],
+
     // PROFILE COMPLETION FLAG
     isProfileComplete: {
       type: Boolean,
@@ -60,8 +87,19 @@ const userSchema = new mongoose.Schema(
           type: String,
           required: true,
         },
+         // NEW FIELD
+    fuelType: {
+      type: String,
+      enum: ["petrol", "diesel", "electric"],
+      default: "petrol",
+    },
       },
     ],
+
+    profileImage: {
+  type: String,
+  default: "",
+},
 
     // PASSENGER STATS
     totalRidesTaken: { type: Number, default: 0 },
@@ -71,9 +109,46 @@ const userSchema = new mongoose.Schema(
     totalRidesGiven: { type: Number, default: 0 },
     driverCancelledRides: { type: Number, default: 0 },
     activeRides: { type: Number, default: 0 },
+
+// =============================
+// RIDECOINS (NEW)
+// =============================
+
+// Current available RideCoins
+rideCoins: {
+  type: Number,
+  default: 0,
+},
+
+// Total RideCoins earned till now
+totalRideCoinsEarned: {
+  type: Number,
+  default: 0,
+},
+
+// Total RideCoins redeemed till now
+totalRideCoinsRedeemed: {
+  type: Number,
+  default: 0,
+},
+
+// Premium Membership (Future)
+isPremium: {
+  type: Boolean,
+  default: false,
+},
+
+// Premium Expiry Date
+premiumExpiry: {
+  type: Date,
+  default: null,
+},
+    
   },
   { timestamps: true }
 );
+
+
 
 // PASSWORD HASH
 userSchema.pre("save", async function (next) {

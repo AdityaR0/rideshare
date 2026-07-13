@@ -1,72 +1,85 @@
 import sys
-import io
-
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-
 import os
+from dotenv import load_dotenv
 from twilio.rest import Client
 
-# ======================
-# Twilio credentials
-# ======================
-account_sid = os.getenv("TWILIO_ACCOUNT_SID") or "YOUR_ACCOUNT_SID"
-auth_token  = os.getenv("TWILIO_AUTH_TOKEN") or "YOUR_AUTH_TOKEN"
+# Load .env
+load_dotenv("C:/carpoolproject/server/.env")
 
-client = Client(account_sid, auth_token)
+# Twilio Client
+client = Client(
+    os.getenv("TWILIO_ACCOUNT_SID"),
+    os.getenv("TWILIO_AUTH_TOKEN")
+)
 
-# Twilio number (trial or paid)
-TWILIO_NUMBER = "+12722044990"
-# Recipient number (must be verified in trial mode)
-TO_NUMBER = "+919608554339"
+TWILIO_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
+TO_NUMBER = "+919608554339"   # Emergency Contact
 
-# ======================
-# SOS message info
-# ======================
-user_name = "Aditya Raj"
-current_location = "Ballygunge to Dum Dum route"
+# -----------------------------
+# Safe argument reading
+# -----------------------------
+passenger_name = sys.argv[1] if len(sys.argv) > 1 else "Passenger"
+driver_name = sys.argv[2] if len(sys.argv) > 2 else "Driver"
+vehicle_name = sys.argv[3] if len(sys.argv) > 3 else "Vehicle"
+vehicle_number = sys.argv[4] if len(sys.argv) > 4 else "Unknown"
+origin = sys.argv[5] if len(sys.argv) > 5 else "Unknown"
+destination = sys.argv[6] if len(sys.argv) > 6 else "Unknown"
 
-# SMS message (trial account will append "Sent from your Twilio trial account")
-sms_body = f"""
-🚨 SOS ALERT 🚨
-User: {user_name}
-Location: {current_location}
-This is an emergency! Please respond immediately.
-"""
+# -----------------------------
+# SHORT SMS (Trial Friendly)
+# -----------------------------
+sms_body = (
+    f"SOS!\n"
+    f"{passenger_name}\n"
+    f"{vehicle_number}\n"
+    f"{origin} -> {destination}"
+)
 
-# Voice message (trial account requires key press to start call)
+# -----------------------------
+# Voice Call
+# -----------------------------
 voice_message = f"""
 <Response>
     <Say voice="alice">
-        🚨 Emergency Alert! {user_name} is in danger on the {current_location} route.
-        Immediate assistance required!
+
+    Emergency Alert.
+
+    Passenger {passenger_name}
+    has pressed the RideShare emergency button.
+
+    Driver is {driver_name}.
+
+    Vehicle number {vehicle_number}.
+
+    The ride is from {origin}
+    to {destination}.
+
+    Please provide immediate assistance.
+
     </Say>
-    <Pause length="1"/>
-    <Say voice="alice">Please acknowledge by pressing any key to confirm.</Say>
 </Response>
 """
 
 try:
-    # ======================
-    # 1. Send SMS
-    # ======================
+
+    # Send SMS
     sms = client.messages.create(
         body=sms_body,
         from_=TWILIO_NUMBER,
         to=TO_NUMBER
     )
-    print(f"✅ SOS SMS sent! SID: {sms.sid}")
-    print("ℹ️ Note: 'Sent from your Twilio trial account' will appear in trial mode.")
 
-    # ======================
-    # 2. Make Voice Call
-    # ======================
+    print("SMS SID:", sms.sid)
+    print("SMS Status:", sms.status)
+
+    # Make Call
     call = client.calls.create(
         twiml=voice_message,
         from_=TWILIO_NUMBER,
         to=TO_NUMBER
     )
-    print(f"✅ SOS Call initiated! SID: {call.sid}")
-    print("ℹ️ Note: In trial mode, recipient must press a key to start the call.")
+
+    print("Call SID:", call.sid)
 
 except Exception as e:
-    print(f"❌ Error sending SOS alert: {e}")
+    print("ERROR:", e)

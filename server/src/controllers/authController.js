@@ -2,6 +2,9 @@ const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const User = require("../models/User");
 
+const { giveRideCoins } = require("../utils/coinUtils");
+const rewards = require("../config/rewards");
+
 // generate JWT
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -32,6 +35,13 @@ const registerUser = async (req, res) => {
       role,
       isProfileComplete: false,
     });
+
+    // Give Welcome RideCoins
+await giveRideCoins({
+  userId: user._id,
+  coins: rewards.WELCOME_BONUS,
+  reason: "Welcome Bonus",
+});
 
     res.status(201).json({
       message: "Registration successful. Please login.",

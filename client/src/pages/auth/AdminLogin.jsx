@@ -7,6 +7,7 @@ const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -15,66 +16,86 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/admin/login", {
-        password,
-      });
+      const res = await axios.post(
+        "http://localhost:5000/api/admin/login",
+        { password }
+      );
 
-      // save token & role in localStorage
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", "admin");
+      // same storage logic as your current setup
+      localStorage.setItem("carpool-token", res.data.token);
+      localStorage.setItem(
+        "carpool-user",
+        JSON.stringify({
+          role: "admin",
+          name: "Admin",
+        })
+      );
 
-      setLoading(false);
       navigate("/admin/dashboard");
     } catch (err) {
-      console.error(err);
-      setLoading(false);
       setError(
-        err.response?.data?.message || "Admin login failed. Please try again."
+        err?.response?.data?.message ||
+          "Admin login failed. Please try again."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    // <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
-    <div className="min-h-screen flex items-center justify-center bg-[#F7F7F7]">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md px-8 py-10">
-        <div className="text-center mb-6">
-          <div className="text-3xl font-bold text-slate-900 mb-1">Admin Panel</div>
-          <p className="text-sm text-slate-500">
-            Enter admin password to access the dashboard.
+    <div className="min-h-[calc(100vh-64px-64px)] flex items-center justify-center bg-[#F7F7F7] px-4 py-10">
+      <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-8 sm:p-10">
+        
+        {/* Logo & Heading (same as Login.jsx) */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white shadow">
+            <span className="text-2xl">🚗</span>
+          </div>
+
+          <h1 className="mt-4 text-2xl sm:text-3xl font-bold text-slate-900">
+            RideShare
+          </h1>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Admin access only
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Error */}
+        {error && (
+          <div className="mb-4 text-xs sm:text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {error}
+          </div>
+        )}
+
+        {/* Admin Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-xs font-medium text-slate-600 mb-1">
               Admin Password
             </label>
             <input
               type="password"
               required
-              autoComplete="current-password"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Enter admin password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter admin password"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
-
-          {error && (
-            <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">
-              {error}
-            </p>
-          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-slate-900 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed transition"
+            className="w-full mt-2 bg-slate-900 text-white rounded-full py-2.5 text-sm font-semibold hover:bg-slate-800 disabled:opacity-60"
           >
             {loading ? "Signing in..." : "Sign in as Admin"}
           </button>
         </form>
+
+        <p className="mt-4 text-xs sm:text-sm text-slate-500 text-center">
+          Restricted area – authorized users only
+        </p>
       </div>
     </div>
   );
