@@ -2,9 +2,11 @@
 // import { useState } from "react";
 import { useState, useEffect } from "react";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Community() {
-  const currentUserRole = "passenger";
+  const { user } = useAuth();
+const currentUserRole = user?.role;
 
   // const members = [
   //   { name: "Aditya Raj", role: "Driver" },
@@ -21,39 +23,72 @@ export default function Community() {
   const [members, setMembers] = useState([]);
   
 
-  const [posts, setPosts] = useState([
-    {
-      name: "Rahul Kumar",
-      role: "Passenger",
-      message: "Anyone traveling from Salt Lake to New Town around 9 AM?",
-      time: "2 hours ago",
-      comments: [{ by: "Amit Das", text: "Yes, I can take you." }],
-    },
-    {
-      name: "Amit Das",
-      role: "Driver",
-      message: "I offer rides daily from Howrah to Sector V.",
-      time: "5 hours ago",
-      comments: [],
-    },
-  ]);
+const [posts, setPosts] = useState([]);
+  
 
   const [newComment, setNewComment] = useState("");
-  useEffect(() => {
+  
+  const [newPost, setNewPost] = useState("");
+  const loadPosts = async () => {
+  try {
+    const res = await api.get("/community/posts");
+    setPosts(res.data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+  
+useEffect(() => {
+
   api.get("/community/tmsl-members")
     .then((res) => {
       setMembers(res.data.members || []);
     })
-    .catch((err) => console.error(err));
+    .catch(console.error);
+
+  loadPosts();
+
 }, []);
 
-  const addComment = (index) => {
-    if (!newComment.trim()) return;
-    const updated = [...posts];
-    updated[index].comments.push({ by: "You", text: newComment });
-    setPosts(updated);
+  const createPost = async () => {
+
+  if (!newPost.trim()) return;
+
+  try {
+
+    await api.post("/community/post", {
+      message: newPost
+    });
+
+    setNewPost("");
+
+    loadPosts();
+
+  } catch (err) {
+    console.error(err);
+  }
+
+};
+
+const addComment = async (postId) => {
+
+  if (!newComment.trim()) return;
+
+  try{
+
+    await api.post(`/community/comment/${postId}`,{
+      text:newComment
+    });
+
     setNewComment("");
-  };
+
+    loadPosts();
+
+  }catch(err){
+    console.error(err);
+  }
+
+}
 
   const filteredMembers = members.filter((m) =>
     m.name.toLowerCase().includes(memberSearch.toLowerCase())
@@ -127,14 +162,19 @@ const passengers = members.filter(m => m.role === "passenger").length;
             {/* SHARE */}
             {/* <div className="bg-white rounded-xl p-4 mb-6"> */}
             <div className="bg-white rounded-2xl p-5 mb-6 shadow border border-slate-100">
-              <textarea
-                rows="3"
-                placeholder="Share something with community..."
-                className="w-full border rounded-lg p-2 text-sm"
-              />
-              <button className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-full text-sm">
-                Post
-              </button>
+             <textarea
+rows="3"
+value={newPost}
+onChange={(e)=>setNewPost(e.target.value)}
+placeholder="Share something with community..."
+className="w-full border rounded-lg p-2 text-sm"
+/>
+              <button
+onClick={createPost}
+className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-full text-sm"
+>
+Post
+</button>
             </div>
 
             {/* POSTS */}
@@ -144,20 +184,22 @@ const passengers = members.filter(m => m.role === "passenger").length;
   💬 Active Discussions
 </h2>
 
-              {posts.map((p, i) => (
-                // <div key={i} className="border rounded-lg p-4 mb-4">
-                <div key={i} className="bg-white rounded-2xl p-4 mb-4 shadow border border-slate-100 hover:shadow-lg transition">
+              {posts.map((p) => (
+                <div
+  key={p._id}
+  className="bg-white rounded-2xl p-4 mb-4 shadow border border-slate-100 hover:shadow-lg transition"
+>
                   <p className="text-sm font-medium">
-                    {p.name} ({p.role})
+                    {p.user?.name} ({p.user?.role})
                   </p>
                   <p className="text-sm text-slate-600">{p.message}</p>
-                  <p className="text-xs text-slate-400 mb-3">{p.time}</p>
+                  <p className="text-xs text-slate-400 mb-3">{new Date(p.createdAt).toLocaleString()}</p>
 
                   {/* COMMENTS */}
                   <div className="ml-3 space-y-2">
-                    {p.comments.map((c, ci) => (
+                    {p.comments?.map((c, ci) => (
                       <p key={ci} className="text-xs text-slate-600">
-                        <span className="font-medium">{c.by}:</span> {c.text}
+                        <span className="font-medium">{c.user?.name}:</span> {c.text}
                       </p>
                     ))}
                   </div>
@@ -171,7 +213,7 @@ const passengers = members.filter(m => m.role === "passenger").length;
                       className="flex-1 border rounded-lg px-2 py-1 text-xs"
                     />
                     <button
-                      onClick={() => addComment(i)}
+                      onClick={() => addComment(p._id)}
                       className="px-3 py-1 bg-slate-800 text-white rounded text-xs"
                     >
                       Comment
@@ -204,7 +246,7 @@ const passengers = members.filter(m => m.role === "passenger").length;
     No members yet. Join community 🚀
   </p>
 ) : (
-  filteredMembers.map((m, i) => (
+  filteredMembers.map((m) => (
               
                 // <div
                 //   key={i}
@@ -238,7 +280,7 @@ const passengers = members.filter(m => m.role === "passenger").length;
                 //   )}
                 // </div>
                 <div
-  key={i}
+  key={m._id}
   className="bg-white rounded-xl p-3 shadow hover:shadow-md transition"
 >
   <div className="flex items-center gap-3">
