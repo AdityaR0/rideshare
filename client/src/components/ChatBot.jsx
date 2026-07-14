@@ -3,9 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import BookingChat from "./BookingChat";
 import api from "../utils/axios";
+import { useAuth } from "../context/AuthContext";
 
 export default function ChatBot({ isOpen, onClose }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
 const [screen, setScreen] = useState("home");
 const [message, setMessage] = useState("");
 const [showSuggestions, setShowSuggestions] = useState(true);
@@ -329,21 +332,23 @@ useEffect(() => {
         {/* Options */}
         <div className="space-y-3">
 
-          <button
-  onClick={() => setScreen("booking")}
-  className="
-    w-full
-    text-left
-    p-4
-    rounded-xl
-    bg-blue-50
-    hover:bg-blue-100
-    transition
-    border
-  "
->
-  🚗 Book Ride
-</button>
+{user?.role === "passenger" && (
+  <button
+    onClick={() => setScreen("booking")}
+    className="
+      w-full
+      text-left
+      p-4
+      rounded-xl
+      bg-blue-50
+      hover:bg-blue-100
+      transition
+      border
+    "
+  >
+    🚗 Book Ride
+  </button>
+)}
 
           {/* <button
             className="
@@ -375,25 +380,25 @@ useEffect(() => {
   ❓ Query & Support
 </button>
 
-          <button
-            onClick={() =>
-              navigate("/passenger/my-rides")
-            }
-            className="
-            w-full
-            text-left
-            p-4
-            rounded-xl
-            bg-green-50
-            hover:bg-green-100
-            transition
-            border
-            "
-          >
-            📋 My Bookings
-          </button>
+{user?.role === "passenger" && (
+  <button
+    onClick={() => navigate("/passenger/my-rides")}
+    className="
+      w-full
+      text-left
+      p-4
+      rounded-xl
+      bg-green-50
+      hover:bg-green-100
+      transition
+      border
+    "
+  >
+    📋 My Bookings
+  </button>
+)}
 
-          <button
+  <button
   onClick={handleSOS}
   className="
   w-full
