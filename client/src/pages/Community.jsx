@@ -89,6 +89,7 @@ const createPost = async () => {
     await api.post("/community/post", {
   message: newPost,
   attachRide,
+  community: "local",
 });
 
     setNewPost("");
