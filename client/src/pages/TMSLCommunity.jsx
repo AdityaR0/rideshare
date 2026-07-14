@@ -26,12 +26,12 @@ const currentUserRole = user?.role;
 const [posts, setPosts] = useState([]);
   
 
-  const [newComment, setNewComment] = useState("");
+const [commentInputs, setCommentInputs] = useState({});
   
   const [newPost, setNewPost] = useState("");
   const loadPosts = async () => {
   try {
-    const res = await api.get("/community/posts");
+    const res = await api.get("/community/posts/tmsl");
     setPosts(res.data);
   } catch (err) {
     console.error(err);
@@ -72,23 +72,28 @@ useEffect(() => {
 
 const addComment = async (postId) => {
 
-  if (!newComment.trim()) return;
+  const text = commentInputs[postId];
 
-  try{
+  if (!text?.trim()) return;
 
-    await api.post(`/community/comment/${postId}`,{
-      text:newComment
+  try {
+
+    await api.post(`/community/comment/${postId}`, {
+      text,
     });
 
-    setNewComment("");
+    setCommentInputs({
+      ...commentInputs,
+      [postId]: "",
+    });
 
     loadPosts();
 
-  }catch(err){
+  } catch (err) {
     console.error(err);
   }
 
-}
+};
 
   const filteredMembers = members.filter((m) =>
     m.name.toLowerCase().includes(memberSearch.toLowerCase())
@@ -207,8 +212,13 @@ Post
                   {/* ADD COMMENT */}
                   <div className="mt-3 flex gap-2">
                     <input
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
+                      value={commentInputs[p._id] || ""}
+                      onChange={(e) =>
+  setCommentInputs({
+    ...commentInputs,
+    [p._id]: e.target.value,
+  })
+}
                       placeholder="Comment..."
                       className="flex-1 border rounded-lg px-2 py-1 text-xs"
                     />
