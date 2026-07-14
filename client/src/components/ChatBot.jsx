@@ -569,7 +569,7 @@ truncate
   🚨 Driver Complaint
 </button>
 
-<button
+{/* <button
   onClick={() => sendMessage("Contact Support")}
   className="
 px-3
@@ -587,7 +587,7 @@ truncate
 "
 >
   📞 Contact Support
-</button>
+</button> */}
 
       </div>
 )}
