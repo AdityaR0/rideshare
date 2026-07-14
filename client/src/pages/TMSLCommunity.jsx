@@ -184,13 +184,15 @@ Post
             </div>
 
             {/* POSTS */}
-            <div className="bg-white rounded-xl p-5">
-              {/* <h2 className="font-semibold mb-4">💬 Community Posts</h2> */}
-              <h2 className="font-semibold mb-4 text-lg flex items-center gap-2">
-  💬 Active Discussions
-</h2>
+<div className="bg-white rounded-xl p-5 shadow border border-slate-100">
 
-              {posts.map((p) => (
+  <h2 className="font-semibold mb-4 text-lg flex items-center gap-2">
+    💬 Active Discussions
+  </h2>
+
+  <div className="max-h-[300px] overflow-y-auto pr-2 space-y-4">
+
+    {posts.map((p) => (
                 <div
   key={p._id}
   className="bg-white rounded-2xl p-4 mb-4 shadow border border-slate-100 hover:shadow-lg transition"
@@ -233,6 +235,7 @@ Post
                 </div>
               ))}
             </div>
+  </div>
           </div>
 
           {/* RIGHT SIDE – MEMBERS (FIXED + SCROLL) */}
