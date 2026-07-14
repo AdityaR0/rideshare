@@ -16,22 +16,30 @@ export default function Register() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-       `${import.meta.env.VITE_API_BASE_URL}/auth/register`, {
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+
+  try {
+    await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/auth/register`,
+      {
         ...form,
         role,
-      });
-      alert("Account created successfully");
-      navigate("/login");
-    } catch (err) {
-      alert(err.response?.data?.message || "Registration failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+      }
+    );
+
+    alert("Account created successfully");
+    navigate("/login");
+  } catch (err) {
+    alert(
+      err.response?.data?.message ||
+      "Registration failed"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     // <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-blue-500 to-purple-500 flex items-center justify-center px-4 py-16">
