@@ -57,7 +57,8 @@ useEffect(() => {
   try {
 
     await api.post("/community/post", {
-      message: newPost
+      message: newPost,
+      community: "tmsl"
     });
 
     setNewPost("");
