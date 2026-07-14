@@ -74,20 +74,12 @@ router.post("/trigger", protect, async (req, res) => {
     const destination = rideDetails.destination || "Unknown";
 
     // ---------------- SMS ----------------
-    const smsBody = `🚨 RideShare SOS
-
-Passenger: ${passengerName}
-
-Driver: ${driverName}
-
-Vehicle: ${vehicleName}
-
-Vehicle No: ${vehicleNumber}
-
-Route:
-${origin}
-→
-${destination}`;
+// ---------------- SHORT SMS (Twilio Trial Friendly) ----------------
+const smsBody =
+  `SOS!\n` +
+  `${passengerName}\n` +
+  `${vehicleNumber}\n` +
+  `${origin} -> ${destination}`;
 
     await client.messages.create({
       body: smsBody,
