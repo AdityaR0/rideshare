@@ -312,31 +312,42 @@ exports.getPosts = async (req, res) => {
   try {
     const user = req.user;
 
-    let community = "";
+    const requestedCommunity = req.params.community;
 
-    if (user.community === "local") {
-      community = "local";
-    } else if (
-      user.officialCommunities.some(
-        (c) =>
-          c.communityName === "tmsl" &&
-          c.verified
-      )
-    ) {
-      community = "tmsl";
-    } else if (
-      user.officialCommunities.some(
-        (c) =>
-          c.communityName === "infosys" &&
-          c.verified
-      )
-    ) {
-      community = "infosys";
-    } else {
-      return res.status(400).json({
-        message: "Community not found",
-      });
-    }
+let community = "";
+
+if (requestedCommunity === "local") {
+
+  community = "local";
+
+}
+else if (
+  requestedCommunity === "tmsl" &&
+  user.officialCommunities.some(
+    c => c.communityName === "tmsl" && c.verified
+  )
+) {
+
+  community = "tmsl";
+
+}
+else if (
+  requestedCommunity === "infosys" &&
+  user.officialCommunities.some(
+    c => c.communityName === "infosys" && c.verified
+  )
+) {
+
+  community = "infosys";
+
+}
+else {
+
+  return res.status(403).json({
+    message: "Access denied",
+  });
+
+}
 console.log("Current Community:", community);
 const posts = await CommunityPost.find({
   community,
