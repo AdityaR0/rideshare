@@ -20,7 +20,7 @@ router.get("/my", protect, getMyCommunity);
 
 // Community Posts
 router.post("/post", protect, createPost);
-router.get("/posts", protect, getPosts);
+router.get("/posts/:community", protect, getPosts);
 router.post("/comment/:id", protect, addComment);
 
 router.post("/join-local", protect, joinLocalCommunity);
