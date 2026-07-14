@@ -28,7 +28,7 @@ const [selectedRide, setSelectedRide] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
 const loadPosts = async () => {
   try {
-    const res = await api.get("/community/posts");
+    const res = await api.get("/community/posts/local");
     setPosts(res.data);
   } catch (err) {
     console.error(err);
