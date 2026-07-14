@@ -337,7 +337,7 @@ exports.getPosts = async (req, res) => {
         message: "Community not found",
       });
     }
-
+console.log("Current Community:", community);
 const posts = await CommunityPost.find({
   community,
 })
