@@ -2,7 +2,10 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
-  const { user } = useAuth();
+  const { user, loadingUser } = useAuth();
+  if (loadingUser) {
+  return <div>Loading...</div>;
+}
   console.log("ProtectedRoute User =", user);
 
   // not logged in
