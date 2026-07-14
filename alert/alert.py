@@ -1,10 +1,8 @@
 import sys
 import os
-from dotenv import load_dotenv
+
 from twilio.rest import Client
 
-# Load .env
-load_dotenv("C:/carpoolproject/server/.env")
 
 # Twilio Client
 client = Client(
