@@ -215,7 +215,7 @@ exports.getInfosysMembers = async (req, res) => {
 exports.createPost = async (req, res) => {
   try {
     const user = req.user;
-    const { message, attachRide } = req.body;
+    const { message, attachRide, community } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({
@@ -224,31 +224,57 @@ exports.createPost = async (req, res) => {
     }
 
     // Decide community automatically
-    let community = "";
+    // Validate selected community
 
-    if (user.community === "local") {
-      community = "local";
-    } else if (
-      user.officialCommunities.some(
-        (c) =>
-          c.communityName === "tmsl" &&
-          c.verified
-      )
-    ) {
-      community = "tmsl";
-    } else if (
-      user.officialCommunities.some(
-        (c) =>
-          c.communityName === "infosys" &&
-          c.verified
-      )
-    ) {
-      community = "infosys";
-    } else {
-      return res.status(400).json({
-        message: "You are not part of any community",
-      });
-    }
+if (community === "local") {
+
+  if (user.community !== "local") {
+    return res.status(403).json({
+      message: "You are not a member of Local Community",
+    });
+  }
+
+}
+
+else if (community === "tmsl") {
+
+  const joined = user.officialCommunities.some(
+    c =>
+      c.communityName === "tmsl" &&
+      c.verified
+  );
+
+  if (!joined) {
+    return res.status(403).json({
+      message: "You are not a member of TMSL Community",
+    });
+  }
+
+}
+
+else if (community === "infosys") {
+
+  const joined = user.officialCommunities.some(
+    c =>
+      c.communityName === "infosys" &&
+      c.verified
+  );
+
+  if (!joined) {
+    return res.status(403).json({
+      message: "You are not a member of Infosys Community",
+    });
+  }
+
+}
+
+else {
+
+  return res.status(400).json({
+    message: "Invalid community",
+  });
+
+}
 
 let rideId = null;
 
